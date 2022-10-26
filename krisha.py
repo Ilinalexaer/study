@@ -39,13 +39,13 @@ def parser(url):
 if __name__ == '__main__':
     conn = sqlite3.connect('flats.db')
     cur = conn.cursor()
+    # Создаем БД, если ее нет
+    db_connect.create_db(cur)
     #Получаем значения фильтров из БД
     url = db_connect.get_url(cur)
     list_of_list = parser(url)
 
     if list_of_list:
-        #Создаем БД, если ее нет
-        db_connect.create_db(cur)
         #Сохраняем объявления в БД
         db_connect.insert_flat_to_db(cur, list_of_list)
 

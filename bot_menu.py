@@ -37,6 +37,7 @@ def start(message):
 def func(message):
     conn = sqlite3.connect('flats.db')
     cur = conn.cursor()
+    db_connect.create_db(cur)
 
     if message.text == "🥳 Ссылка на krishka.kz":
         bot.send_message(message.chat.id, text="https://t.me/+O0AAxylCHno0ZGEy")
