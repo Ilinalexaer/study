@@ -5,12 +5,10 @@ import datetime
 from functools import reduce
 import sqlite3
 import sending_messages_to_tg
+from uuid import uuid4
+import db_connect
 
 currentDateTime = datetime.datetime.now()
-
-url = 'https://krisha.kz/arenda/kvartiry/astana/?das[_sys.hasphoto]=1&' \
-      'das[live.furniture][0]=1&das[live.furniture][1]=2&das[live.rooms]=2&' \
-      'das[price][to]=400000&das[rent.period]=2&das[who]=1&page=0'
 
 def parser(url):
     page_list = []
@@ -38,47 +36,18 @@ def parser(url):
                                   True])
     return page_list
 
-
-def create_db(cur):
-    cur.execute("""CREATE TABLE IF NOT EXISTS flats(
-        flat_id INT PRIMARY KEY,
-        discription TEXT,
-        money TEXT,
-        date_of_post TEXT,
-        link TEXT,
-        date TIMESTAMP,
-        status BOOL);
-        """)
-
-
-def check_id_flat(id, cur):
-    id_flat = id[0]
-    cur.execute(f"SELECT flat_id FROM flats WHERE flat_id = {id_flat};")
-    return cur.fetchall()
-
-
-def insert_flat_to_db(cur, list_of_list):
-    for i in list_of_list:
-        #heck_id_flat(i, cur)
-        # cur.execute(f"SELECT flat_id FROM flats WHERE flat_id = {i[0]};")
-        # all_result = cur.fetchall()
-        all_result = check_id_flat(i, cur)
-        if all_result:
-            print('Есть такая квартира в базе')
-        else:
-            print('Нет такой квартиры, давай добавим!')
-            sending_messages_to_tg.send_telegram(i[4])
-            cur.execute("INSERT INTO flats VALUES(?, ?, ?, ?, ?, ?, ?);", i)
-
 if __name__ == '__main__':
+    conn = sqlite3.connect('flats.db')
+    cur = conn.cursor()
+    #Получаем значения фильтров из БД
+    url = db_connect.get_url(cur)
     list_of_list = parser(url)
 
     if list_of_list:
-        conn = sqlite3.connect('flats.db')
-        cur = conn.cursor()
+        #Создаем БД, если ее нет
+        db_connect.create_db(cur)
+        #Сохраняем объявления в БД
+        db_connect.insert_flat_to_db(cur, list_of_list)
 
-        create_db(cur)
-        insert_flat_to_db(cur, list_of_list)
-
-        conn.commit()
+    conn.commit()
 
